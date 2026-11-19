@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="GeoCapture.Api.Tests/GeoCapture.Api.Tests.csproj" />
+  <Project Path="GeoCapture.Api/GeoCapture.Api.csproj" />
+</Solution>
