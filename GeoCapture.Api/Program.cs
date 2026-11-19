@@ -1,39 +1,114 @@
+using System.Threading.RateLimiting;
 using GeoCapture.Api.Auth;
 using GeoCapture.Api.Data;
-using GeoCapture.Api.Models;
-using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
-var builder = WebApplication.CreateBuilder(args);
+var bootstrap = args.FirstOrDefault() == "bootstrap-admin";
 
-var connectionString = builder.Configuration.GetConnectionString("Postgres");
-
-if (string.IsNullOrWhiteSpace(connectionString))
-{
-    throw new InvalidOperationException(
-        "Configure ConnectionStrings:Postgres before starting the API.");
-}
+var builder = WebApplication.CreateBuilder(
+    bootstrap ? Array.Empty<string>() : args);
 
 builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    var connectionString = builder.Configuration.GetConnectionString("Postgres");
+
+    if (string.IsNullOrWhiteSpace(connectionString))
+    {
+        throw new InvalidOperationException(
+            "Configure ConnectionStrings:Postgres before starting the API.");
+    }
+
     options.UseNpgsql(connectionString, postgres =>
         postgres.MigrationsHistoryTable(
             "__EFMigrationsHistory",
-            AppDbContext.Schema)));
+            AppDbContext.Schema));
+});
 
-builder.Services
-    .AddIdentityCore<AppUser>(IdentityConfiguration.Configure)
-    .AddRoles<IdentityRole<Guid>>()
-    .AddEntityFrameworkStores<AppDbContext>();
-
+builder.Services.AddGeoCaptureAuth();
 builder.Services.AddProblemDetails();
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy("login", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+});
+
 var app = builder.Build();
+
+if (bootstrap)
+{
+    if (args.Length != 2 || string.IsNullOrWhiteSpace(args[1]))
+    {
+        throw new ArgumentException("Usage: bootstrap-admin USERNAME");
+    }
+
+    await AdminBootstrap.RunAsync(app.Services, args[1]);
+    return;
+}
 
 app.UseExceptionHandler();
 app.UseHttpsRedirection();
 
-app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+var contentTypes = new FileExtensionContentTypeProvider();
+contentTypes.Mappings[".frag"] = "application/octet-stream";
+contentTypes.Mappings[".bin"] = "application/octet-stream";
+contentTypes.Mappings[".wasm"] = "application/wasm";
+
+app.UseDefaultFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    ContentTypeProvider = contentTypes
+});
+
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseRateLimiter();
+app.UseAntiforgery();
+
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/api"))
+    {
+        context.Response.Headers.CacheControl = "no-store";
+    }
+
+    if (!HttpMethods.IsGet(context.Request.Method) &&
+        !HttpMethods.IsHead(context.Request.Method) &&
+        !HttpMethods.IsOptions(context.Request.Method))
+    {
+        var antiforgery = context.RequestServices
+            .GetRequiredService<IAntiforgery>();
+
+        try
+        {
+            await antiforgery.ValidateRequestAsync(context);
+        }
+        catch (AntiforgeryValidationException)
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await context.Response.WriteAsJsonAsync(new ApiError("csrf_invalid"));
+            return;
+        }
+    }
+
+    await next(context);
+});
+
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }))
+    .AllowAnonymous();
 
 if (app.Environment.IsDevelopment())
 {
@@ -44,7 +119,6 @@ if (app.Environment.IsDevelopment())
             try
             {
                 await database.Users.AnyAsync(token);
-
                 return Results.Ok(new { status = "ok" });
             }
             catch (NpgsqlException)
@@ -53,7 +127,10 @@ if (app.Environment.IsDevelopment())
                     statusCode: StatusCodes.Status503ServiceUnavailable,
                     title: "Database is not ready.");
             }
-        });
+        }).AllowAnonymous();
 }
 
+app.MapGeoCaptureAuth();
 app.Run();
+
+public partial class Program { }

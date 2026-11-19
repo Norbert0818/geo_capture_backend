@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GeoCapture.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+201efbe82982098612e596f77c8db176b42f0d73")]
 [assembly: System.Reflection.AssemblyProductAttribute("GeoCapture.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GeoCapture.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
