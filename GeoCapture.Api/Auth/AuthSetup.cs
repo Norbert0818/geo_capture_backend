@@ -23,7 +23,8 @@ public static class AuthSetup
             .AddIdentityCore<AppUser>(IdentityConfiguration.Configure)
             .AddRoles<IdentityRole<Guid>>()
             .AddEntityFrameworkStores<AppDbContext>()
-            .AddSignInManager();
+            .AddSignInManager()
+            .AddDefaultTokenProviders();
 
         services
             .AddAuthentication(IdentityConstants.ApplicationScheme)
@@ -63,10 +64,8 @@ public static class AuthSetup
                         stamp != user.SecurityStamp)
                     {
                         context.RejectPrincipal();
-
                         await context.HttpContext.SignOutAsync(
                             IdentityConstants.ApplicationScheme);
-
                         return;
                     }
 

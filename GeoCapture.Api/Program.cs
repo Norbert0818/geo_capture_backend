@@ -7,6 +7,21 @@ using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
+var geoEnvPath = Path.Combine(AppContext.BaseDirectory, ".env");
+
+if (File.Exists(geoEnvPath))
+{
+    try
+    {
+        DotNetEnv.Env.NoClobber().Load(geoEnvPath);
+    }
+    catch
+    {
+        throw new InvalidOperationException(
+            "The API .env file could not be loaded. Check its format.");
+    }
+}
+
 var bootstrap = args.FirstOrDefault() == "bootstrap-admin";
 
 var builder = WebApplication.CreateBuilder(
@@ -131,6 +146,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapGeoCaptureAuth();
+app.MapInitialPassword();
 app.Run();
 
 public partial class Program { }

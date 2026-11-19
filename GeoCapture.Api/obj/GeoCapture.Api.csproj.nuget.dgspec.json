@@ -1,31 +1,25 @@
 {
   "format": 1,
   "restore": {
-    "E:\\Projects\\Szili\\geo_capture_backend\\GeoCapture.Api\\GeoCapture.Api.csproj": {}
+    "C:\\dev\\geo_capture_backend\\GeoCapture.Api\\GeoCapture.Api.csproj": {}
   },
   "projects": {
-    "E:\\Projects\\Szili\\geo_capture_backend\\GeoCapture.Api\\GeoCapture.Api.csproj": {
+    "C:\\dev\\geo_capture_backend\\GeoCapture.Api\\GeoCapture.Api.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\Projects\\Szili\\geo_capture_backend\\GeoCapture.Api\\GeoCapture.Api.csproj",
+        "projectUniqueName": "C:\\dev\\geo_capture_backend\\GeoCapture.Api\\GeoCapture.Api.csproj",
         "projectName": "GeoCapture.Api",
-        "projectPath": "E:\\Projects\\Szili\\geo_capture_backend\\GeoCapture.Api\\GeoCapture.Api.csproj",
-        "packagesPath": "C:\\Users\\T25731\\.nuget\\packages\\",
-        "outputPath": "E:\\Projects\\Szili\\geo_capture_backend\\GeoCapture.Api\\obj\\",
+        "projectPath": "C:\\dev\\geo_capture_backend\\GeoCapture.Api\\GeoCapture.Api.csproj",
+        "packagesPath": "C:\\Users\\solyo\\.nuget\\packages\\",
+        "outputPath": "C:\\dev\\geo_capture_backend\\GeoCapture.Api\\obj\\",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\T25731\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "C:\\Users\\solyo\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -52,6 +46,10 @@
           "framework": "net10.0",
           "targetAlias": "net10.0",
           "dependencies": {
+            "DotNetEnv": {
+              "target": "Package",
+              "version": "[3.2.0, )"
+            },
             "Microsoft.AspNetCore.Identity.EntityFrameworkCore": {
               "target": "Package",
               "version": "[10.*, )"
@@ -86,7 +84,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.401/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "C:\\Users\\solyo\\.dotnet\\sdk\\10.0.404/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.AspNetCore": "(,10.0.32767]",
             "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",
