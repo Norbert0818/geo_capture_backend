@@ -2223,24 +2223,31 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\solyo\\.nuget\\packages\\": {}
+    "C:\\Users\\T25731\\.nuget\\packages\\": {},
+    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\dev\\geo_capture_backend\\GeoCapture.Api\\GeoCapture.Api.csproj",
+      "projectUniqueName": "E:\\Projects\\Szili\\geo_capture_backend\\GeoCapture.Api\\GeoCapture.Api.csproj",
       "projectName": "GeoCapture.Api",
-      "projectPath": "C:\\dev\\geo_capture_backend\\GeoCapture.Api\\GeoCapture.Api.csproj",
-      "packagesPath": "C:\\Users\\solyo\\.nuget\\packages\\",
-      "outputPath": "C:\\dev\\geo_capture_backend\\GeoCapture.Api\\obj\\",
+      "projectPath": "E:\\Projects\\Szili\\geo_capture_backend\\GeoCapture.Api\\GeoCapture.Api.csproj",
+      "packagesPath": "C:\\Users\\T25731\\.nuget\\packages\\",
+      "outputPath": "E:\\Projects\\Szili\\geo_capture_backend\\GeoCapture.Api\\obj\\",
       "projectStyle": "PackageReference",
+      "fallbackFolders": [
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+      ],
       "configFilePaths": [
-        "C:\\Users\\solyo\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\T25731\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
         "net10.0"
       ],
       "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -2305,7 +2312,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Users\\solyo\\.dotnet\\sdk\\10.0.404/PortableRuntimeIdentifierGraph.json",
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.401/PortableRuntimeIdentifierGraph.json",
         "packagesToPrune": {
           "Microsoft.AspNetCore": "(,10.0.32767]",
           "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",

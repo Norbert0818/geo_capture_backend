@@ -3408,24 +3408,31 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\solyo\\.nuget\\packages\\": {}
+    "C:\\Users\\T25731\\.nuget\\packages\\": {},
+    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\dev\\geo_capture_backend\\GeoCapture.Api.Tests\\GeoCapture.Api.Tests.csproj",
+      "projectUniqueName": "E:\\Projects\\Szili\\geo_capture_backend\\GeoCapture.Api.Tests\\GeoCapture.Api.Tests.csproj",
       "projectName": "GeoCapture.Api.Tests",
-      "projectPath": "C:\\dev\\geo_capture_backend\\GeoCapture.Api.Tests\\GeoCapture.Api.Tests.csproj",
-      "packagesPath": "C:\\Users\\solyo\\.nuget\\packages\\",
-      "outputPath": "C:\\dev\\geo_capture_backend\\GeoCapture.Api.Tests\\obj\\",
+      "projectPath": "E:\\Projects\\Szili\\geo_capture_backend\\GeoCapture.Api.Tests\\GeoCapture.Api.Tests.csproj",
+      "packagesPath": "C:\\Users\\T25731\\.nuget\\packages\\",
+      "outputPath": "E:\\Projects\\Szili\\geo_capture_backend\\GeoCapture.Api.Tests\\obj\\",
       "projectStyle": "PackageReference",
+      "fallbackFolders": [
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+      ],
       "configFilePaths": [
-        "C:\\Users\\solyo\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\T25731\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
         "net10.0"
       ],
       "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -3433,8 +3440,8 @@
           "framework": "net10.0",
           "targetAlias": "net10.0",
           "projectReferences": {
-            "C:\\dev\\geo_capture_backend\\GeoCapture.Api\\GeoCapture.Api.csproj": {
-              "projectPath": "C:\\dev\\geo_capture_backend\\GeoCapture.Api\\GeoCapture.Api.csproj"
+            "E:\\Projects\\Szili\\geo_capture_backend\\GeoCapture.Api\\GeoCapture.Api.csproj": {
+              "projectPath": "E:\\Projects\\Szili\\geo_capture_backend\\GeoCapture.Api\\GeoCapture.Api.csproj"
             }
           }
         }
@@ -3497,7 +3504,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Users\\solyo\\.dotnet\\sdk\\10.0.404/PortableRuntimeIdentifierGraph.json",
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.401/PortableRuntimeIdentifierGraph.json",
         "packagesToPrune": {
           "Microsoft.CSharp": "(,4.7.32767]",
           "Microsoft.VisualBasic": "(,10.4.32767]",

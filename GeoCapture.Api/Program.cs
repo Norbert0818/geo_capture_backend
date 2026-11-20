@@ -7,9 +7,34 @@ using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
-var geoEnvPath = Path.Combine(AppContext.BaseDirectory, ".env");
+var geoWorkingDirectory = Directory.GetCurrentDirectory();
 
-if (File.Exists(geoEnvPath))
+var geoProjectRoot = new[]
+{
+    geoWorkingDirectory,
+    Path.Combine(geoWorkingDirectory, "GeoCapture.Api")
+}.FirstOrDefault(directory =>
+    File.Exists(Path.Combine(directory, "GeoCapture.Api.csproj")));
+
+var geoBinaryRoot =
+    Path.GetDirectoryName(typeof(AppDbContext).Assembly.Location);
+
+if (string.IsNullOrWhiteSpace(geoBinaryRoot))
+{
+    geoBinaryRoot = AppContext.BaseDirectory;
+}
+
+var geoEnvCandidates = new[]
+{
+    geoProjectRoot is null ? null : Path.Combine(geoProjectRoot, ".env"),
+    Path.Combine(geoBinaryRoot, ".env"),
+    Path.Combine(AppContext.BaseDirectory, ".env")
+};
+
+var geoEnvPath = geoEnvCandidates.FirstOrDefault(path =>
+    path is not null && File.Exists(path));
+
+if (geoEnvPath is not null)
 {
     try
     {
@@ -18,9 +43,13 @@ if (File.Exists(geoEnvPath))
     catch
     {
         throw new InvalidOperationException(
-            "The API .env file could not be loaded. Check its format.");
+            $"The .env file could not be loaded. Check its format: {geoEnvPath}");
     }
 }
+
+var geoConfigurationRoot = geoEnvPath is null
+    ? geoProjectRoot ?? geoBinaryRoot
+    : Path.GetDirectoryName(geoEnvPath)!;
 
 var bootstrap = args.FirstOrDefault() == "bootstrap-admin";
 
@@ -29,15 +58,40 @@ var builder = WebApplication.CreateBuilder(
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    var connectionString = builder.Configuration.GetConnectionString("Postgres");
+    var connectionString =
+        builder.Configuration.GetConnectionString("Postgres");
 
     if (string.IsNullOrWhiteSpace(connectionString))
     {
         throw new InvalidOperationException(
-            "Configure ConnectionStrings:Postgres before starting the API.");
+            "ConnectionStrings:Postgres is missing. Check the API .env file.");
     }
 
-    options.UseNpgsql(connectionString, postgres =>
+    var settings = new NpgsqlConnectionStringBuilder(connectionString);
+    var certificate = settings.RootCertificate;
+
+    if (!string.IsNullOrWhiteSpace(certificate))
+    {
+        var configuredPath = Path.GetFullPath(
+            certificate, geoConfigurationRoot);
+        var outputPath = Path.GetFullPath(
+            certificate, geoBinaryRoot);
+
+        var certificatePath = File.Exists(configuredPath)
+            ? configuredPath
+            : outputPath;
+
+        if (!File.Exists(certificatePath))
+        {
+            throw new FileNotFoundException(
+                "The PostgreSQL CA certificate was not found.",
+                certificatePath);
+        }
+
+        settings.RootCertificate = certificatePath;
+    }
+
+    options.UseNpgsql(settings.ConnectionString, postgres =>
         postgres.MigrationsHistoryTable(
             "__EFMigrationsHistory",
             AppDbContext.Schema));
@@ -62,6 +116,30 @@ builder.Services.AddRateLimiter(options =>
 });
 
 var app = builder.Build();
+
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    Console.WriteLine(
+        $"GeoCapture .env file: {geoEnvPath ?? "(not found)"}");
+
+    if (string.IsNullOrWhiteSpace(
+        app.Configuration.GetConnectionString("Postgres")))
+    {
+        var message = geoEnvPath is null
+            ? "No PostgreSQL connection string is configured. " +
+              "Place .env next to GeoCapture.Api.csproj."
+            : "The loaded .env file does not provide a non-empty " +
+              "ConnectionStrings__Postgres value.";
+
+        throw new InvalidOperationException(message);
+    }
+
+    // Validate configuration and certificate paths before accepting requests.
+    // Resolving the context does not open a database connection.
+    using var configurationScope = app.Services.CreateScope();
+    _ = configurationScope.ServiceProvider
+        .GetRequiredService<AppDbContext>();
+}
 
 if (bootstrap)
 {

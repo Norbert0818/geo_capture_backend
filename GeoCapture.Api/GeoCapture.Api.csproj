@@ -18,12 +18,11 @@
   </ItemGroup>
 
   <ItemGroup>
-  <None Remove=".env" />
-  <Content Remove=".env" />
-  <Content Include=".env"
-           Condition="Exists('$(MSBuildProjectDirectory)/.env')"
+  <None Remove="certs/prod-ca-2021.crt" />
+  <Content Remove="certs/prod-ca-2021.crt" />
+  <Content Include="certs/prod-ca-2021.crt"
            CopyToOutputDirectory="PreserveNewest"
-           CopyToPublishDirectory="Never" />
-</ItemGroup>
+           CopyToPublishDirectory="PreserveNewest" />
+	</ItemGroup>
 
 </Project>

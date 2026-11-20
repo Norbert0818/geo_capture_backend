@@ -122,7 +122,6 @@ E:\Projects\Szili\geo_capture_backend\GeoCapture.Api\obj\Debug\net10.0\GeoCaptur
 E:\Projects\Szili\geo_capture_backend\GeoCapture.Api\bin\Debug\net10.0\GeoCapture.Api.staticwebassets.runtime.json
 E:\Projects\Szili\geo_capture_backend\GeoCapture.Api\obj\Debug\net10.0\compressed\g6umipjgx4-{0}-s6lxjtj78i-s6lxjtj78i.gz
 E:\Projects\Szili\geo_capture_backend\GeoCapture.Api\obj\Debug\net10.0\compressed\nkejii40gz-{0}-7zwdxe6uef-7zwdxe6uef.gz
-E:\Projects\Szili\geo_capture_backend\GeoCapture.Api\obj\Debug\net10.0\compressed\51as8poemh-{0}-qe4e69cefu-qe4e69cefu.gz
 E:\Projects\Szili\geo_capture_backend\GeoCapture.Api\obj\Debug\net10.0\compressed\l3pigrj8y4-{0}-lcw69qj5bo-lcw69qj5bo.gz
 E:\Projects\Szili\geo_capture_backend\GeoCapture.Api\obj\Debug\net10.0\compressed\9o8falfzsf-{0}-bop0g3norv-bop0g3norv.gz
 E:\Projects\Szili\geo_capture_backend\GeoCapture.Api\obj\Debug\net10.0\compressed\9gr13gvvji-{0}-ggtu78n88f-ggtu78n88f.gz
@@ -136,10 +135,8 @@ E:\Projects\Szili\geo_capture_backend\GeoCapture.Api\obj\Debug\net10.0\compresse
 E:\Projects\Szili\geo_capture_backend\GeoCapture.Api\obj\Debug\net10.0\compressed\ne0756cacj-{0}-nynxpyuu3o-nynxpyuu3o.gz
 E:\Projects\Szili\geo_capture_backend\GeoCapture.Api\obj\Debug\net10.0\compressed\559cfzerd2-{0}-p8v73ufiuy-p8v73ufiuy.gz
 E:\Projects\Szili\geo_capture_backend\GeoCapture.Api\obj\Debug\net10.0\compressed\hptpri8syv-{0}-ffgomjwyz5-ffgomjwyz5.gz
-E:\Projects\Szili\geo_capture_backend\GeoCapture.Api\obj\Debug\net10.0\compressed\omz4wrzbgu-{0}-b6dt4d10zt-b6dt4d10zt.gz
 E:\Projects\Szili\geo_capture_backend\GeoCapture.Api\obj\Debug\net10.0\compressed\59dp8gqh4l-{0}-v7cwmk9311-v7cwmk9311.gz
 E:\Projects\Szili\geo_capture_backend\GeoCapture.Api\obj\Debug\net10.0\compressed\vf7oywiqvg-{0}-ukynepvvfv-ukynepvvfv.gz
-E:\Projects\Szili\geo_capture_backend\GeoCapture.Api\obj\Debug\net10.0\compressed\03efe9u2m7-{0}-x9lqyu7ixp-x9lqyu7ixp.gz
 E:\Projects\Szili\geo_capture_backend\GeoCapture.Api\obj\Debug\net10.0\compressed\lc5xakqz7m-{0}-p3s96g1r30-p3s96g1r30.gz
 E:\Projects\Szili\geo_capture_backend\GeoCapture.Api\obj\Debug\net10.0\compressed\fhbn5bgvwm-{0}-px0a6lnnva-px0a6lnnva.gz
 C:\dev\geo_capture_backend\GeoCapture.Api\bin\Debug\net10.0\appsettings.Development.json
@@ -289,3 +286,9 @@ C:\dev\geo_capture_backend\GeoCapture.Api\obj\Debug\net10.0\ref\GeoCapture.Api.d
 C:\dev\geo_capture_backend\GeoCapture.Api\bin\Debug\net10.0\.env
 C:\dev\geo_capture_backend\GeoCapture.Api\bin\Debug\net10.0\DotNetEnv.dll
 C:\dev\geo_capture_backend\GeoCapture.Api\bin\Debug\net10.0\Superpower.dll
+E:\Projects\Szili\geo_capture_backend\GeoCapture.Api\bin\Debug\net10.0\DotNetEnv.dll
+E:\Projects\Szili\geo_capture_backend\GeoCapture.Api\bin\Debug\net10.0\Superpower.dll
+E:\Projects\Szili\geo_capture_backend\GeoCapture.Api\obj\Debug\net10.0\compressed\51as8poemh-{0}-ngs9uveju7-ngs9uveju7.gz
+E:\Projects\Szili\geo_capture_backend\GeoCapture.Api\obj\Debug\net10.0\compressed\03efe9u2m7-{0}-8juhwie09l-8juhwie09l.gz
+E:\Projects\Szili\geo_capture_backend\GeoCapture.Api\bin\Debug\net10.0\certs\prod-ca-2021.crt
+E:\Projects\Szili\geo_capture_backend\GeoCapture.Api\obj\Debug\net10.0\compressed\omz4wrzbgu-{0}-23mqyqnzgp-23mqyqnzgp.gz
