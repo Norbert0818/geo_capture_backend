@@ -3,3 +3,5 @@
 !.env.example
 .idea/
 .vs/
+**/bin/
+**/obj/
