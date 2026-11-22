@@ -104,6 +104,150 @@ namespace GeoCapture.Api.Data.Migrations
                     b.ToTable("AspNetUsers", "geo_capture");
                 });
 
+            modelBuilder.Entity("GeoCapture.Api.Models.CapturedPhoto", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<double>("AccuracyMeters")
+                        .HasColumnType("double precision");
+
+                    b.Property<DateTime>("CapturedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ClientPhotoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CoordinatesText")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<double>("Latitude")
+                        .HasColumnType("double precision");
+
+                    b.Property<DateTime>("LocationMeasuredAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<double>("Longitude")
+                        .HasColumnType("double precision");
+
+                    b.Property<long>("OriginalByteLength")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("OriginalHeight")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("OriginalMimeType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("OriginalSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("OriginalWidth")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("StampedByteLength")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("StampedHeight")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("StampedSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("StampedWidth")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("UploadId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UploadId", "ClientPhotoId")
+                        .IsUnique();
+
+                    b.HasIndex("UploadId", "Position")
+                        .IsUnique();
+
+                    b.ToTable("CapturedPhotos", "geo_capture");
+                });
+
+            modelBuilder.Entity("GeoCapture.Api.Models.PhotoContent", b =>
+                {
+                    b.Property<Guid>("PhotoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<byte[]>("OriginalBytes")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<byte[]>("StampedBytes")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.HasKey("PhotoId");
+
+                    b.ToTable("PhotoContents", "geo_capture");
+                });
+
+            modelBuilder.Entity("GeoCapture.Api.Models.PhotoUpload", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ClientUploadId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ModifiedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PayloadSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("SerialNumber")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)");
+
+                    b.Property<DateTime>("UploadedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UploadedByUsername")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<Guid>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId", "ClientUploadId")
+                        .IsUnique();
+
+                    b.HasIndex("OwnerId", "UploadedAtUtc", "Id");
+
+                    b.ToTable("PhotoUploads", "geo_capture");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", b =>
                 {
                     b.Property<Guid>("Id")
@@ -234,6 +378,39 @@ namespace GeoCapture.Api.Data.Migrations
                     b.ToTable("AspNetUserTokens", "geo_capture");
                 });
 
+            modelBuilder.Entity("GeoCapture.Api.Models.CapturedPhoto", b =>
+                {
+                    b.HasOne("GeoCapture.Api.Models.PhotoUpload", "Upload")
+                        .WithMany("Photos")
+                        .HasForeignKey("UploadId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Upload");
+                });
+
+            modelBuilder.Entity("GeoCapture.Api.Models.PhotoContent", b =>
+                {
+                    b.HasOne("GeoCapture.Api.Models.CapturedPhoto", "Photo")
+                        .WithOne("Content")
+                        .HasForeignKey("GeoCapture.Api.Models.PhotoContent", "PhotoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Photo");
+                });
+
+            modelBuilder.Entity("GeoCapture.Api.Models.PhotoUpload", b =>
+                {
+                    b.HasOne("GeoCapture.Api.Models.AppUser", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", null)
@@ -283,6 +460,17 @@ namespace GeoCapture.Api.Data.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("GeoCapture.Api.Models.CapturedPhoto", b =>
+                {
+                    b.Navigation("Content")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GeoCapture.Api.Models.PhotoUpload", b =>
+                {
+                    b.Navigation("Photos");
                 });
 #pragma warning restore 612, 618
         }

@@ -10,15 +10,17 @@ public sealed class AppDbContext
 {
     public const string Schema = "geo_capture";
 
-    public AppDbContext(DbContextOptions<AppDbContext> options)
-        : base(options)
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
+
+    public DbSet<PhotoUpload> PhotoUploads => Set<PhotoUpload>();
+    public DbSet<CapturedPhoto> CapturedPhotos => Set<CapturedPhoto>();
+    public DbSet<PhotoContent> PhotoContents => Set<PhotoContent>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
-
         builder.HasDefaultSchema(Schema);
 
         builder.Entity<AppUser>(user =>
@@ -26,5 +28,7 @@ public sealed class AppDbContext
             user.Property(x => x.MustChangePassword).HasDefaultValue(true);
             user.Property(x => x.IsActive).HasDefaultValue(true);
         });
+
+        builder.ConfigurePhotoUploads();
     }
 }

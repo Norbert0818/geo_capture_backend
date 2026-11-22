@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using GeoCapture.Api.Uploads;
+using GeoCapture.Api.Admin;
 
 var geoWorkingDirectory = Directory.GetCurrentDirectory();
 
@@ -99,6 +101,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddGeoCaptureAuth();
 builder.Services.AddProblemDetails();
+builder.Services.AddGeoCaptureUploads();
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -169,6 +172,7 @@ app.UseStaticFiles(new StaticFileOptions
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
+app.UseGeoCaptureUploadLimits();
 app.UseAntiforgery();
 
 app.Use(async (context, next) =>
@@ -225,6 +229,8 @@ if (app.Environment.IsDevelopment())
 
 app.MapGeoCaptureAuth();
 app.MapInitialPassword();
+app.MapGeoCaptureUploads();
+app.MapAdminAccounts();
 app.Run();
 
 public partial class Program { }
