@@ -12,8 +12,9 @@ public sealed class UploadOptions
 
 public sealed record UploadManifest(
     Guid Id,
-    string? SerialNumber,
-    UploadPhotoMetadata?[]? Photos);
+    UploadPhotoMetadata?[]? Photos,
+    string? OldSerialNumber = null,
+    string? NewSerialNumber = null);
 
 public sealed record UploadPhotoMetadata(
     Guid Id,
@@ -31,7 +32,9 @@ public sealed record UploadSummary(
     string UploadedByUsername,
     DateTime UploadedAtUtc,
     int PhotoCount,
-    Guid Version);
+    Guid Version,
+    string? OldSerialNumber = null,
+    string? NewSerialNumber = null);
 
 public sealed record UploadPage(int Page, int PageSize, int Total, UploadSummary[] Items);
 
@@ -44,7 +47,9 @@ public sealed record UploadDetails(
     DateTime UploadedAtUtc,
     Guid Version,
     bool Replayed,
-    UploadedPhotoResponse[] Photos);
+    UploadedPhotoResponse[] Photos,
+    string? OldSerialNumber = null,
+    string? NewSerialNumber = null);
 
 public sealed record UploadedPhotoResponse(
     Guid Id,

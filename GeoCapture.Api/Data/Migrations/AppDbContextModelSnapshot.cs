@@ -213,6 +213,10 @@ namespace GeoCapture.Api.Data.Migrations
                     b.Property<DateTime?>("ModifiedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("OldSerialNumber")
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)");
+
                     b.Property<Guid>("OwnerId")
                         .HasColumnType("uuid");
 

@@ -50,7 +50,8 @@ public static class UploadEndpoints
             ClientUploadId = prepared.ClientUploadId,
             OwnerId = ownerId,
             UploadedByUsername = context.User.Identity?.Name ?? "",
-            SerialNumber = prepared.SerialNumber,
+            SerialNumber = prepared.NewSerialNumber,
+            OldSerialNumber = prepared.OldSerialNumber,
             PayloadSha256 = prepared.PayloadSha256,
             UploadedAtUtc = clock.GetUtcNow().UtcDateTime,
             Photos = prepared.Photos.ToList()
@@ -110,7 +111,8 @@ public static class UploadEndpoints
         var items = await query.OrderByDescending(x => x.UploadedAtUtc).ThenByDescending(x => x.Id)
             .Skip((number - 1) * size).Take(size)
             .Select(x => new UploadSummary(x.Id, x.ClientUploadId, x.SerialNumber,
-                x.OwnerId, x.UploadedByUsername, x.UploadedAtUtc, x.Photos.Count, x.Version))
+                x.OwnerId, x.UploadedByUsername, x.UploadedAtUtc, x.Photos.Count, x.Version,
+                x.OldSerialNumber, x.OldSerialNumber == null ? null : x.SerialNumber))
             .ToArrayAsync(token);
 
         return Results.Ok(new UploadPage(number, size, total, items));
@@ -166,5 +168,6 @@ public static class UploadEndpoints
             photo.OriginalByteLength, photo.StampedByteLength, photo.OriginalSha256,
             photo.StampedSha256,
             $"/api/uploads/{upload.Id:D}/photos/{photo.Id:D}/original",
-            $"/api/uploads/{upload.Id:D}/photos/{photo.Id:D}/stamped")).ToArray());
+            $"/api/uploads/{upload.Id:D}/photos/{photo.Id:D}/stamped")).ToArray(),
+        upload.OldSerialNumber, upload.OldSerialNumber is null ? null : upload.SerialNumber);
 }

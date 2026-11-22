@@ -7,8 +7,8 @@ using Microsoft.Extensions.Options;
 
 namespace GeoCapture.Api.Uploads;
 
-public sealed record PreparedUpload(Guid ClientUploadId, string SerialNumber,
-    string PayloadSha256, CapturedPhoto[] Photos);
+public sealed record PreparedUpload(Guid ClientUploadId, string OldSerialNumber,
+    string NewSerialNumber, string PayloadSha256, CapturedPhoto[] Photos);
 
 public sealed class UploadReader(IOptions<UploadOptions> options, TimeProvider clock)
 {
@@ -33,6 +33,7 @@ public sealed class UploadReader(IOptions<UploadOptions> options, TimeProvider c
             {
                 MultipartBodyLengthLimit = limits.MaxRequestBytes,
                 ValueLengthLimit = 64 * 1024,
+                // One manifest plus the original and stamped file for each photo.
                 ValueCountLimit = 1 + (2 * limits.MaxPhotos),
                 MemoryBufferThreshold = 64 * 1024
             }, token);
@@ -65,12 +66,10 @@ public sealed class UploadReader(IOptions<UploadOptions> options, TimeProvider c
             throw new UploadException("invalid_manifest");
         }
 
-        var serial = manifest.SerialNumber?.Trim();
-        if (string.IsNullOrEmpty(serial) || serial.Length > limits.MaxSerialNumberLength ||
-            serial.Any(char.IsControl))
-        {
-            throw new UploadException("invalid_serial_number");
-        }
+        var oldSerial = ReadSerial(manifest.OldSerialNumber, limits.MaxSerialNumberLength,
+            "invalid_old_serial_number");
+        var newSerial = ReadSerial(manifest.NewSerialNumber, limits.MaxSerialNumberLength,
+            "invalid_new_serial_number");
 
         var metadata = manifest.Photos.OfType<UploadPhotoMetadata>().ToArray();
         if (metadata.Any(x => x.Id == Guid.Empty) ||
@@ -97,12 +96,12 @@ public sealed class UploadReader(IOptions<UploadOptions> options, TimeProvider c
 
         var photos = new List<CapturedPhoto>();
         using var digest = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-        var normalizedManifest = new UploadManifest(manifest.Id, serial,
+        var normalizedManifest = new UploadManifest(manifest.Id,
             metadata.Select(x => x with
             {
                 CapturedAtUtc = x.CapturedAtUtc.ToUniversalTime(),
                 LocationMeasuredAtUtc = x.LocationMeasuredAtUtc.ToUniversalTime()
-            }).ToArray());
+            }).ToArray(), oldSerial, newSerial);
         digest.AppendData(JsonSerializer.SerializeToUtf8Bytes(normalizedManifest, JsonOptions));
 
         foreach (var photo in metadata)
@@ -150,8 +149,18 @@ public sealed class UploadReader(IOptions<UploadOptions> options, TimeProvider c
             });
         }
 
-        return new PreparedUpload(manifest.Id, serial,
+        return new PreparedUpload(manifest.Id, oldSerial, newSerial,
             Convert.ToHexString(digest.GetHashAndReset()), photos.ToArray());
+    }
+
+    private static string ReadSerial(string? value, int maxLength, string code)
+    {
+        var serial = value?.Trim();
+        if (string.IsNullOrEmpty(serial) || serial.Length > maxLength || serial.Any(char.IsControl))
+        {
+            throw new UploadException(code);
+        }
+        return serial;
     }
 
     private static async Task<byte[]> ReadBytes(IFormFile file, CancellationToken token)

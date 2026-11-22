@@ -12,6 +12,7 @@ public static class UploadModelConfiguration
             upload.ToTable("PhotoUploads");
             upload.HasKey(x => x.Id);
             upload.Property(x => x.SerialNumber).HasMaxLength(1024).IsRequired();
+            upload.Property(x => x.OldSerialNumber).HasMaxLength(1024);
             upload.Property(x => x.UploadedByUsername).HasMaxLength(256).IsRequired();
             upload.Property(x => x.PayloadSha256).HasMaxLength(64).IsRequired();
             upload.Property(x => x.Version).IsConcurrencyToken();

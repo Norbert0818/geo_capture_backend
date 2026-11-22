@@ -8,6 +8,7 @@ public sealed class PhotoUpload
     public AppUser Owner { get; set; } = null!;
     public string UploadedByUsername { get; set; } = "";
     public string SerialNumber { get; set; } = "";
+    public string? OldSerialNumber { get; set; }
     public string PayloadSha256 { get; set; } = "";
     public DateTime UploadedAtUtc { get; set; }
     public DateTime? ModifiedAtUtc { get; set; }
