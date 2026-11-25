@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GeoCapture.Api.FieldWork;
 
-public static class WorkEndpoints
+public static partial class WorkEndpoints
 {
     public static void MapFieldWork(this WebApplication app)
     {
@@ -17,6 +17,8 @@ public static class WorkEndpoints
         });
         group.MapPost("/settings", Settings).RequireAuthorization(AuthSetup.AdminPolicy);
         group.MapGet("", List);
+        group.MapGet("/export.csv", ExportCsv);
+        group.MapGet("/{id:guid}/export.zip", ExportZip);
         group.MapGet("/{id:guid}", Details);
         group.MapGet("/{id:guid}/history", History);
         group.MapGet("/{id:guid}/photos/{photoId:guid}/{variant}", Image);
