@@ -1,4 +1,5 @@
 ﻿using GeoCapture.Api.Auth;
+using GeoCapture.Api.FieldWork;
 using GeoCapture.Api.Data;
 using GeoCapture.Api.Models;
 using Microsoft.AspNetCore.Hosting;
@@ -21,9 +22,12 @@ public sealed class AuthApiFactory : WebApplicationFactory<global::Program>
     private readonly SqliteConnection _connection =
         new("Data Source=:memory:");
 
+    private readonly SqliteConnection _workConnection = new("Data Source=:memory:");
+
     public AuthApiFactory()
     {
         _connection.Open();
+        _workConnection.Open();
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -34,6 +38,10 @@ public sealed class AuthApiFactory : WebApplicationFactory<global::Program>
         {
             services.RemoveAll<DbContextOptions<AppDbContext>>();
             services.RemoveAll<IDbContextOptionsConfiguration<AppDbContext>>();
+
+            services.RemoveAll<DbContextOptions<WorkDbContext>>();
+            services.RemoveAll<IDbContextOptionsConfiguration<WorkDbContext>>();
+            services.AddDbContext<WorkDbContext>(options => options.UseSqlite(_workConnection));
 
             services.AddDbContext<AppDbContext>(
                 options => options.UseSqlite(_connection));
@@ -53,21 +61,18 @@ public sealed class AuthApiFactory : WebApplicationFactory<global::Program>
         bool mustChangePassword = true)
     {
         using var scope = Services.CreateScope();
-
         var database = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         await database.Database.EnsureCreatedAsync();
+        await scope.ServiceProvider.GetRequiredService<WorkDbContext>().Database.EnsureCreatedAsync();
 
         var roles = scope.ServiceProvider
             .GetRequiredService<RoleManager<IdentityRole<Guid>>>();
-
-        var users = scope.ServiceProvider
-            .GetRequiredService<UserManager<AppUser>>();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
 
         foreach (var role in new[] { AuthSetup.AdminRole, AuthSetup.UserRole })
         {
             var roleResult = await roles.CreateAsync(
                 new IdentityRole<Guid>(role) { Id = Guid.NewGuid() });
-
             if (!roleResult.Succeeded)
             {
                 throw new InvalidOperationException("Test role creation failed.");
@@ -81,7 +86,6 @@ public sealed class AuthApiFactory : WebApplicationFactory<global::Program>
         };
 
         var result = await users.CreateAsync(user, InitialPassword);
-
         if (!result.Succeeded)
         {
             throw new InvalidOperationException("Test user creation failed.");
@@ -100,15 +104,11 @@ public sealed class AuthApiFactory : WebApplicationFactory<global::Program>
     public async Task DisableUserAsync()
     {
         using var scope = Services.CreateScope();
-
-        var users = scope.ServiceProvider
-            .GetRequiredService<UserManager<AppUser>>();
-
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
         var user = (await users.FindByNameAsync(Username))!;
         user.IsActive = false;
 
         var result = await users.UpdateAsync(user);
-
         if (!result.Succeeded)
         {
             throw new InvalidOperationException("Test user update failed.");
@@ -118,10 +118,10 @@ public sealed class AuthApiFactory : WebApplicationFactory<global::Program>
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
-
         if (disposing)
         {
             _connection.Dispose();
+            _workConnection.Dispose();
         }
     }
 }

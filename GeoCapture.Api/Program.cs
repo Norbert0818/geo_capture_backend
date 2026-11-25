@@ -1,13 +1,14 @@
+using GeoCapture.Api.Admin;
 using System.Threading.RateLimiting;
 using GeoCapture.Api.Auth;
 using GeoCapture.Api.Data;
+using GeoCapture.Api.Uploads;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
-using GeoCapture.Api.Uploads;
-using GeoCapture.Api.Admin;
+using GeoCapture.Api.FieldWork;
 
 var geoWorkingDirectory = Directory.GetCurrentDirectory();
 
@@ -54,11 +55,12 @@ var geoConfigurationRoot = geoEnvPath is null
     : Path.GetDirectoryName(geoEnvPath)!;
 
 var bootstrap = args.FirstOrDefault() == "bootstrap-admin";
+var migrateWork = args.FirstOrDefault() == "migrate-field-work";
 
 var builder = WebApplication.CreateBuilder(
-    bootstrap ? Array.Empty<string>() : args);
+    (bootstrap || migrateWork) ? Array.Empty<string>() : args);
 
-builder.Services.AddDbContext<AppDbContext>(options =>
+string GeoPostgresConnection()
 {
     var connectionString =
         builder.Configuration.GetConnectionString("Postgres");
@@ -93,11 +95,14 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         settings.RootCertificate = certificatePath;
     }
 
-    options.UseNpgsql(settings.ConnectionString, postgres =>
-        postgres.MigrationsHistoryTable(
-            "__EFMigrationsHistory",
-            AppDbContext.Schema));
-});
+    return settings.ConnectionString;
+}
+
+builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(GeoPostgresConnection(),
+    postgres => postgres.MigrationsHistoryTable("__EFMigrationsHistory", AppDbContext.Schema)));
+builder.Services.AddDbContext<WorkDbContext>(options => options.UseNpgsql(GeoPostgresConnection(),
+    postgres => postgres.MigrationsHistoryTable("__FieldWorkMigrationsHistory", AppDbContext.Schema)));
+builder.Services.AddScoped<WorkReader>();
 
 builder.Services.AddGeoCaptureAuth();
 builder.Services.AddProblemDetails();
@@ -144,6 +149,14 @@ if (!app.Environment.IsEnvironment("Testing"))
         .GetRequiredService<AppDbContext>();
 }
 
+if (migrateWork)
+{
+    using var scope = app.Services.CreateScope();
+    await scope.ServiceProvider.GetRequiredService<WorkDbContext>().Database.MigrateAsync();
+    Console.WriteLine("Field work migrations completed.");
+    return;
+}
+
 if (bootstrap)
 {
     if (args.Length != 2 || string.IsNullOrWhiteSpace(args[1]))
@@ -173,6 +186,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
 app.UseGeoCaptureUploadLimits();
+app.UseFieldWorkLimits();
 app.UseAntiforgery();
 
 app.Use(async (context, next) =>
@@ -227,10 +241,11 @@ if (app.Environment.IsDevelopment())
         }).AllowAnonymous();
 }
 
+app.MapFieldWork();
 app.MapGeoCaptureAuth();
 app.MapInitialPassword();
-app.MapGeoCaptureUploads();
 app.MapAdminAccounts();
+app.MapGeoCaptureUploads();
 app.Run();
 
 public partial class Program { }
