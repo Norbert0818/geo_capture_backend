@@ -11,7 +11,8 @@ public sealed record WorkSaveRequest(Guid ChangeId, Guid? ExpectedVersion, strin
 public sealed record WorkDetails(Guid Id, Guid OwnerId, string Owner, int Revision,
     Guid Version, DateTime CreatedAtUtc, DateTime UpdatedAtUtc, WorkDocument Document, bool Replayed = false);
 public sealed record WorkSummary(Guid Id, string Owner, string Kind, string? SerialNumber,
-    int Revision, DateTime UpdatedAtUtc, int PhotoCount);
+    int Revision, DateTime UpdatedAtUtc, int PhotoCount,
+    string? OldSerialNumber = null, string? NewSerialNumber = null, string[]? Locations = null);
 public sealed record WorkHistory(int Revision, string Actor, DateTime AtUtc, string Reason,
     string[] Changes, WorkDocument Document);
 public sealed record WorkSettingsResponse(bool AllowQrGeneration, Guid Version);

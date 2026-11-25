@@ -58,20 +58,28 @@ public static class WorkEndpoints
 
     private static async Task<IResult> List(bool? all, int? page, HttpContext context, WorkDbContext db, CancellationToken token)
     {
-        if (all == true && !context.User.IsInRole(AuthSetup.AdminRole)) return Results.Forbid();
+        var admin = context.User.IsInRole(AuthSetup.AdminRole);
+        if (all == true && !admin) return Results.Forbid();
+        WorkListFilters filters;
+        try { filters = WorkListFilters.Read(context.Request.Query); }
+        catch (WorkException error) { return Results.BadRequest(new ApiError(error.Code)); }
+        if (filters.Owner.Length != 0 && !admin) return Results.Forbid();
+        if (filters.Owner.Length != 0 && all != true) return Results.BadRequest(new ApiError("work_invalid_filters"));
         var number = page ?? 1;
         if (number < 1 || number > 100000) return Results.BadRequest(new ApiError("work_invalid_page"));
-        var query = all == true ? db.Records.AsNoTracking() : db.Records.AsNoTracking().Where(x => x.OwnerId == UserId(context));
+        var query = WorkListSearch.Query(db, filters);
+        if (all != true) query = query.Where(x => x.OwnerId == UserId(context));
         var total = await query.CountAsync(token);
-        var records = await query.OrderByDescending(x => x.UpdatedAtUtc).ThenBy(x => x.Id).Skip((number - 1) * 20).Take(20).ToArrayAsync(token);
+        var records = await query.OrderByDescending(x => x.UpdatedAtUtc).ThenBy(x => x.Id)
+            .Skip((number - 1) * 20).Take(20).ToArrayAsync(token);
         var ids = records.Select(x => x.Id).ToArray();
-        var revisions = await db.Revisions.AsNoTracking().Where(x => ids.Contains(x.WorkId)).ToArrayAsync(token);
-        var items = records.Select(record =>
-        {
-            var doc = WorkRules.Read<WorkDocument>(revisions.Single(x => x.WorkId == record.Id && x.Number == record.Revision).DocumentJson);
-            return new WorkSummary(record.Id, record.OwnerName, doc.Kind, doc.NewPole?.SerialNumber ?? doc.OldPole?.SerialNumber,
-                record.Revision, record.UpdatedAtUtc, doc.Photos.Length);
-        });
+        // Use the immutable revision numbers captured with this page, even if an edit finishes now.
+        var numbers = records.Select(x => x.Revision).Distinct().ToArray();
+        var snapshots = await db.Revisions.AsNoTracking().Where(x => ids.Contains(x.WorkId) &&
+            numbers.Contains(x.Number)).ToArrayAsync(token);
+        var revisions = snapshots.ToDictionary(x => (x.WorkId, x.Number));
+        var items = records.Select(record => WorkListSearch.Summary(record,
+            WorkRules.Read<WorkDocument>(revisions[(record.Id, record.Revision)].DocumentJson)));
         return Results.Ok(new { page = number, total, items });
     }
 
@@ -91,21 +99,16 @@ public static class WorkEndpoints
     {
         if (!await Visible(context, db).AnyAsync(x => x.Id == id, token)) return Results.NotFound();
         var revisions = await db.Revisions.AsNoTracking().Where(x => x.WorkId == id).OrderByDescending(x => x.Number).ToArrayAsync(token);
-        return Results.Ok(new
-        {
-            items = revisions.Select(x => new WorkHistory(x.Number, x.ActorName, x.AtUtc,
-            x.Reason, WorkRules.Read<string[]>(x.ChangesJson), WorkRules.Read<WorkDocument>(x.DocumentJson)))
-        });
+        return Results.Ok(new { items = revisions.Select(x => new WorkHistory(x.Number, x.ActorName, x.AtUtc,
+            x.Reason, WorkRules.Read<string[]>(x.ChangesJson), WorkRules.Read<WorkDocument>(x.DocumentJson))) });
     }
 
     private static async Task<IResult> Image(Guid id, Guid photoId, string variant, HttpContext context, WorkDbContext db, CancellationToken token)
     {
         if (variant is not ("original" or "stamped") || !await Visible(context, db).AnyAsync(x => x.Id == id, token)) return Results.NotFound();
         var photo = await db.Photos.AsNoTracking().Where(x => x.WorkId == id && x.Id == photoId)
-            .Select(x => new {
-                Bytes = variant == "original" ? x.OriginalBytes : x.StampedBytes,
-                Mime = variant == "original" ? x.OriginalMimeType : "image/jpeg"
-            }).SingleOrDefaultAsync(token);
+            .Select(x => new { Bytes = variant == "original" ? x.OriginalBytes : x.StampedBytes,
+                Mime = variant == "original" ? x.OriginalMimeType : "image/jpeg" }).SingleOrDefaultAsync(token);
         if (photo is null) return Results.NotFound();
         context.Response.Headers.CacheControl = "no-store";
         context.Response.Headers["X-Content-Type-Options"] = "nosniff";
@@ -142,18 +145,10 @@ public static class WorkEndpoints
         record.Revision++; record.Version = Guid.NewGuid(); record.UpdatedAtUtc = now;
         var revision = new FieldWorkRevision
         {
-            Id = Guid.NewGuid(),
-            WorkId = id,
-            Number = record.Revision,
-            ChangeId = input.ChangeId,
-            ResultVersion = record.Version,
-            ActorId = UserId(context),
-            ActorName = context.User.Identity?.Name ?? "",
-            AtUtc = now,
-            Reason = input.Reason,
-            PayloadHash = prepared.Hash,
-            DocumentJson = WorkRules.Serialize(input.Document),
-            ChangesJson = WorkRules.Serialize(WorkRules.Changes(prior, input.Document))
+            Id = Guid.NewGuid(), WorkId = id, Number = record.Revision, ChangeId = input.ChangeId,
+            ResultVersion = record.Version, ActorId = UserId(context), ActorName = context.User.Identity?.Name ?? "",
+            AtUtc = now, Reason = input.Reason, PayloadHash = prepared.Hash,
+            DocumentJson = WorkRules.Serialize(input.Document), ChangesJson = WorkRules.Serialize(WorkRules.Changes(prior, input.Document))
         };
         db.Revisions.Add(revision);
         foreach (var photo in prepared.Photos)
