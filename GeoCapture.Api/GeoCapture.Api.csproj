@@ -25,4 +25,8 @@
            CopyToPublishDirectory="PreserveNewest" />
 	</ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Data\Romania\" />
+  </ItemGroup>
+
 </Project>

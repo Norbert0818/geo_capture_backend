@@ -11,7 +11,7 @@ public static partial class WorkEndpoints
         var admin = context.User.IsInRole(AuthSetup.AdminRole);
         if (all == true && !admin) return Results.Forbid();
         WorkListFilters filters;
-        try { filters = WorkListFilters.Read(context.Request.Query); }
+        try { filters = ReadPlaceFilters(context); }
         catch (WorkException error) { return Results.BadRequest(new ApiError(error.Code)); }
         if (filters.Owner.Length != 0 && !admin) return Results.Forbid();
         if (filters.Owner.Length != 0 && all != true)

@@ -71,7 +71,7 @@ public static class WorkExports
                     local.ToString("yyyy-MM-dd'T'HH:mm:sszzz", Invariant),
                     photo.UtcOffsetMinutes.ToString(Invariant), photo.AccuracyMeters.ToString("G", Invariant),
                     photo.MeasuredAtUtc.ToString("O", Invariant), work.CreatedAtUtc.ToString("O", Invariant),
-                    work.UpdatedAtUtc.ToString("O", Invariant), PhotoPath(photo, index, true), PhotoPath(photo, index, false)
+                    work.UpdatedAtUtc.ToString("O", Invariant), WorkReports.PhotoPath(work.Id, work.Document, photo, index, true), WorkReports.PhotoPath(work.Id, work.Document, photo, index, false)
                 ]);
             }
         }
@@ -112,8 +112,8 @@ public static class WorkExports
         token.ThrowIfCancellationRequested();
         var byId = photos.ToDictionary(photo => photo.Id);
         var files = work.Document.Photos.Select((photo, index) => new {
-            photo.Id, photo.Role, Original = PhotoPath(photo, index, true),
-            Stamped = PhotoPath(photo, index, false), byId[photo.Id].OriginalHash, byId[photo.Id].StampedHash
+            photo.Id, photo.Role, Original = WorkReports.PhotoPath(work.Id, work.Document, photo, index, true),
+            Stamped = WorkReports.PhotoPath(work.Id, work.Document, photo, index, false), byId[photo.Id].OriginalHash, byId[photo.Id].StampedHash
         }).ToArray();
         var manifest = new {
             Format = "geocapture.work-export", FormatVersion = 1, ExportedAtUtc = exportedAt.UtcDateTime,
@@ -143,8 +143,8 @@ public static class WorkExports
                 !string.Equals(WorkRules.Hash(content.Original), info.OriginalHash, StringComparison.OrdinalIgnoreCase) ||
                 !string.Equals(WorkRules.Hash(content.Stamped), info.StampedHash, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidDataException("Export photo content did not match the stored snapshot.");
-            await Entry(PhotoPath(photo, index, true), content.Original);
-            await Entry(PhotoPath(photo, index, false), content.Stamped);
+            await Entry(WorkReports.PhotoPath(work.Id, work.Document, photo, index, true), content.Original);
+            await Entry(WorkReports.PhotoPath(work.Id, work.Document, photo, index, false), content.Stamped);
         }
     }
 }

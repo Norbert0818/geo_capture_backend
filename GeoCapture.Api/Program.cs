@@ -102,6 +102,7 @@ builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(GeoPost
     postgres => postgres.MigrationsHistoryTable("__EFMigrationsHistory", AppDbContext.Schema)));
 builder.Services.AddDbContext<WorkDbContext>(options => options.UseNpgsql(GeoPostgresConnection(),
     postgres => postgres.MigrationsHistoryTable("__FieldWorkMigrationsHistory", AppDbContext.Schema)));
+builder.Services.AddSingleton(_ => RomaniaCatalog.Load(builder.Environment.ContentRootPath));
 builder.Services.AddScoped<WorkReader>();
 
 builder.Services.AddGeoCaptureAuth();

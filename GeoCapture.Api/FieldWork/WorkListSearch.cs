@@ -4,7 +4,8 @@ using Microsoft.EntityFrameworkCore;
 namespace GeoCapture.Api.FieldWork;
 
 public sealed record WorkListFilters(string Kind = "", string Serial = "", string Ntet = "",
-    string Locality = "", string County = "", string Owner = "", string FromDate = "", string ToDate = "")
+    string Locality = "", string County = "", string Owner = "", string FromDate = "", string ToDate = "",
+    string CountyCode = "", string LocalityCode = "", string State = "")
 {
     public bool IsEmpty => this == new WorkListFilters();
 
@@ -31,10 +32,14 @@ public sealed record WorkListFilters(string Kind = "", string Serial = "", strin
         }
 
         var result = new WorkListFilters(Text("kind", 20), Text("serial", 1024), Text("ntet", 128),
-            Text("locality", 160), Text("county", 160), Text("owner", 256), Date("fromDate"), Date("toDate"));
+            Text("locality", 160), Text("county", 160), Text("owner", 256), Date("fromDate"), Date("toDate"), Text("countyCode", 2), Text("localityCode", 8), Text("state", 20));
         if (result.Kind is not ("" or "replacement" or "repair" or "removal" or "pit") ||
             result.FromDate.Length != 0 && result.ToDate.Length != 0 &&
             string.CompareOrdinal(result.FromDate, result.ToDate) > 0)
+            throw new WorkException("work_invalid_filters");
+        if (result.State is not ("" or "in_progress" or "completed") ||
+            result.CountyCode.Length != 0 && !System.Text.RegularExpressions.Regex.IsMatch(result.CountyCode, "^[0-9]{2}$") ||
+            result.LocalityCode.Length != 0 && !System.Text.RegularExpressions.Regex.IsMatch(result.LocalityCode, "^[0-9]{1,8}$"))
             throw new WorkException("work_invalid_filters");
         return result;
     }
@@ -86,13 +91,31 @@ public static class WorkListSearch
             conditions.Add($"({Contains(Field($"oldPole.{property}"), parameter)} OR {Contains(Field($"newPole.{property}"), parameter)})");
         }
         if (filters.Kind.Length != 0) conditions.Add($"{Field("kind")} = {Parameter(filters.Kind)}");
+        if (filters.State.Length != 0) conditions.Add($"COALESCE({Field("progress")}, 'completed') = {Parameter(filters.State)}");
         Identity(filters.Serial, "serialNumber");
         Identity(filters.Ntet, "ntetCode");
         if (filters.Owner.Length != 0) conditions.Add(Contains("w.\"OwnerName\"", Parameter(filters.Owner)));
 
         var photoConditions = new List<string>();
-        if (filters.Locality.Length != 0) photoConditions.Add(Contains(Field("locality", true), Parameter(filters.Locality)));
-        if (filters.County.Length != 0) photoConditions.Add(Contains(Field("county", true), Parameter(filters.County)));
+        string FoldSql(string value)
+        {
+            var result = $"lower(COALESCE({value}, ''))";
+            foreach (var pair in new[] { ("ă", "a"), ("â", "a"), ("î", "i"), ("ș", "s"), ("ş", "s"), ("ț", "t"), ("ţ", "t"), ("Ă", "a"), ("Â", "a"), ("Î", "i"), ("Ș", "s"), ("Ş", "s"), ("Ț", "t"), ("Ţ", "t") })
+                result = $"replace({result}, '{pair.Item1}', '{pair.Item2}')";
+            result = $"replace(replace({result}, '-', ' '), '.', ' ')";
+            return result;
+        }
+        void PlaceCode(string code, string property, string textValue, string textProperty)
+        {
+            if (code.Length == 0) return;
+            var exact = $"{Field(property, true)} = {Parameter(code)}";
+            if (textValue.Length != 0) exact = $"({exact} OR ({Field(property, true)} IS NULL AND trim({FoldSql(Field(textProperty, true))}) = {Parameter(RomaniaCatalog.Fold(textValue))}))";
+            photoConditions.Add(exact);
+        }
+        PlaceCode(filters.CountyCode, "countyCode", filters.County, "county");
+        PlaceCode(filters.LocalityCode, "localityCode", filters.Locality, "locality");
+        if (filters.Locality.Length != 0 && filters.LocalityCode.Length == 0) photoConditions.Add(Contains(Field("locality", true), Parameter(filters.Locality)));
+        if (filters.County.Length != 0 && filters.CountyCode.Length == 0) photoConditions.Add(Contains(Field("county", true), Parameter(filters.County)));
         if (filters.FromDate.Length != 0 || filters.ToDate.Length != 0)
         {
             var captured = Field("capturedAtUtc", true);
@@ -121,5 +144,5 @@ public static class WorkListSearch
             document.NewPole?.SerialNumber ?? document.OldPole?.SerialNumber,
             record.Revision, record.UpdatedAtUtc, document.Photos.Length,
             document.OldPole?.SerialNumber, document.NewPole?.SerialNumber,
-            document.Photos.Select(photo => $"{photo.Locality}, {photo.County}").Distinct().ToArray());
+            document.Photos.Select(photo => $"{photo.Locality}, {photo.County}").Distinct().ToArray(), WorkReports.Data(record.Id, document));
 }

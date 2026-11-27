@@ -18,6 +18,7 @@ public static partial class WorkEndpoints
         group.MapPost("/settings", Settings).RequireAuthorization(AuthSetup.AdminPolicy);
         group.MapGet("", List);
         group.MapGet("/export.csv", ExportCsv);
+        group.MapGet("/reports.csv", ExportReportCsv).RequireAuthorization(AuthSetup.AdminPolicy);
         group.MapGet("/{id:guid}/export.zip", ExportZip);
         group.MapGet("/{id:guid}", Details);
         group.MapGet("/{id:guid}/history", History);
@@ -63,7 +64,7 @@ public static partial class WorkEndpoints
         var admin = context.User.IsInRole(AuthSetup.AdminRole);
         if (all == true && !admin) return Results.Forbid();
         WorkListFilters filters;
-        try { filters = WorkListFilters.Read(context.Request.Query); }
+        try { filters = ReadPlaceFilters(context); }
         catch (WorkException error) { return Results.BadRequest(new ApiError(error.Code)); }
         if (filters.Owner.Length != 0 && !admin) return Results.Forbid();
         if (filters.Owner.Length != 0 && all != true) return Results.BadRequest(new ApiError("work_invalid_filters"));
@@ -136,7 +137,7 @@ public static partial class WorkEndpoints
             prior = WorkRules.Read<WorkDocument>((await db.Revisions.AsNoTracking()
                 .SingleAsync(x => x.WorkId == id && x.Number == record.Revision, token)).DocumentJson);
         var allowGeneration = await db.Settings.AsNoTracking().Where(x => x.Id == 1).Select(x => x.AllowQrGeneration).SingleOrDefaultAsync(token);
-        if (input.Document.NewPole is { Source: "generated" } next && !allowGeneration && next != prior?.NewPole)
+        if (input.Document.NewPole is { Source: "generated" } next && !allowGeneration && (prior?.NewPole is null || WorkRules.GeneratedQr(next) != WorkRules.GeneratedQr(prior.NewPole)))
             return Results.BadRequest(new ApiError("work_qr_generation_disabled"));
         var now = clock.GetUtcNow().UtcDateTime;
         if (record is null)

@@ -25,10 +25,7 @@ public static class WorkRules
 
     public static string GeneratedQr(PoleIdentity pole) => Serialize(new
     {
-        type = "geocapture.pole",
-        version = 1,
-        ntetCode = pole.NtetCode,
-        serialNumber = pole.SerialNumber
+        type = "geocapture.pole", version = 1, ntetCode = pole.NtetCode, serialNumber = pole.SerialNumber
     });
 
     private static bool Text(string? value, int max) => !string.IsNullOrWhiteSpace(value) &&
@@ -48,6 +45,10 @@ public static class WorkRules
 
     public static void Validate(WorkDocument doc, DateTime utcNow)
     {
+        if (doc.SchemaVersion == 2) { ModernWorkRules.Validate(doc, utcNow); return; }
+        if (doc.SchemaVersion is not null || doc.Progress is not null ||
+            doc.OldPole?.SerialState is not null || doc.NewPole?.SerialState is not null)
+            throw new WorkException("work_invalid_manifest");
         if (!Kinds.Contains(doc.Kind) || doc.Notes is null || doc.Notes.Length > 4000 ||
             doc.Photos is null || doc.Photos.Length is < 1 or > MaxPhotos || doc.Photos.Any(x => x is null) ||
             doc.Photos.Select(x => x.Id).Distinct().Count() != doc.Photos.Length)
@@ -72,6 +73,14 @@ public static class WorkRules
 
         foreach (var photo in doc.Photos)
         {
+            ValidatePhoto(photo, utcNow);
+            if (photo.Role == "old" && !photo.SerialVisible)
+                throw new WorkException("work_serial_not_confirmed");
+        }
+    }
+
+    public static void ValidatePhoto(WorkPhotoDescriptor photo, DateTime utcNow)
+    {
             if (photo.Id == Guid.Empty || !double.IsFinite(photo.Latitude) || Math.Abs(photo.Latitude) > 90 ||
                 !double.IsFinite(photo.Longitude) || Math.Abs(photo.Longitude) > 180 ||
                 !double.IsFinite(photo.AccuracyMeters) || photo.AccuracyMeters < 0 ||
@@ -80,13 +89,10 @@ public static class WorkRules
                 photo.CapturedAtUtc > utcNow.AddMinutes(5) ||
                 (photo.CapturedAtUtc - photo.MeasuredAtUtc).Duration() > TimeSpan.FromSeconds(30) ||
                 photo.UtcOffsetMinutes is < -840 or > 840 || !Text(photo.Locality, 160) || !Text(photo.County, 160) ||
-                photo.PlaceSource is not ("manual" or "geocoder") ||
+                photo.PlaceSource is not ("manual" or "geocoder" or "catalog") ||
                 photo.OriginalMimeType is not ("image/jpeg" or "image/png") ||
                 photo.OverlayText != Overlay(photo))
                 throw new WorkException("work_invalid_photo_metadata");
-            if (photo.Role == "old" && !photo.SerialVisible)
-                throw new WorkException("work_serial_not_confirmed");
-        }
     }
 
     private static string Coordinate(double value)
@@ -109,6 +115,8 @@ public static class WorkRules
         if (old is null) return ["created"];
         var result = new List<string>();
         if (old.Kind != next.Kind) result.Add("kind");
+        if (old.SchemaVersion != next.SchemaVersion) result.Add("schemaVersion");
+        if (old.Progress != next.Progress) result.Add("progress");
         if (old.Notes != next.Notes) result.Add("notes");
         if (old.OldPole != next.OldPole) result.Add("oldPole");
         if (old.NewPole != next.NewPole) result.Add("newPole");

@@ -7,7 +7,7 @@ namespace GeoCapture.Api.FieldWork;
 
 public sealed record PreparedWork(WorkSaveRequest Request, List<FieldWorkPhoto> Photos, string Hash);
 
-public sealed class WorkReader(WorkDbContext database, TimeProvider clock)
+public sealed class WorkReader(WorkDbContext database, TimeProvider clock, RomaniaCatalog? catalogue = null)
 {
     public async Task<PreparedWork> ReadAsync(Guid workId, HttpRequest request, CancellationToken token)
     {
@@ -35,6 +35,12 @@ public sealed class WorkReader(WorkDbContext database, TimeProvider clock)
             throw new WorkException("work_invalid_manifest");
         input = input with { Reason = input.Reason.Trim() };
         WorkRules.Validate(input.Document, clock.GetUtcNow().UtcDateTime);
+        foreach (var photo in input.Document.Photos)
+        {
+            if ((photo.CountyCode is not null || photo.LocalityCode is not null) && catalogue is null)
+                throw new WorkException("work_catalogue_unavailable", 503);
+            catalogue?.ValidatePhoto(photo);
+        }
         if (form.Files.Select(x => x.Name).Distinct().Count() != form.Files.Count)
             throw new WorkException("work_invalid_photo_pair");
 
@@ -71,14 +77,9 @@ public sealed class WorkReader(WorkDbContext database, TimeProvider clock)
                 catch (UploadException) { throw new WorkException("work_invalid_photo_pair"); }
                 photo = new FieldWorkPhoto
                 {
-                    Id = descriptor.Id,
-                    WorkId = workId,
-                    DescriptorJson = WorkRules.Serialize(descriptor),
-                    OriginalMimeType = descriptor.OriginalMimeType,
-                    OriginalBytes = original,
-                    StampedBytes = stamped,
-                    OriginalHash = WorkRules.Hash(original),
-                    StampedHash = WorkRules.Hash(stamped)
+                    Id = descriptor.Id, WorkId = workId, DescriptorJson = WorkRules.Serialize(descriptor),
+                    OriginalMimeType = descriptor.OriginalMimeType, OriginalBytes = original, StampedBytes = stamped,
+                    OriginalHash = WorkRules.Hash(original), StampedHash = WorkRules.Hash(stamped)
                 };
             }
             total += photo.OriginalBytes.LongLength + photo.StampedBytes.LongLength;
@@ -88,8 +89,7 @@ public sealed class WorkReader(WorkDbContext database, TimeProvider clock)
         if (files.Count != 0) throw new WorkException("work_invalid_photo_pair");
         var hash = WorkRules.Hash(WorkRules.Serialize(new
         {
-            input.Document,
-            input.Reason,
+            input.Document, input.Reason,
             photos = photos.Select(x => new { x.Id, x.OriginalHash, x.StampedHash })
         }));
         return new(input, photos, hash);
